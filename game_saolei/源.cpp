@@ -253,7 +253,7 @@ void sweep(int map[][12], int x, int y)
 					else if (map[i][j]==-1)
 					{
 						continue;
-					}
+					} 
 					else // 不能翻开，不为空，不进行递归操作
 					{
 						map[i][j] += 10;
