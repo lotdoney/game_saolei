@@ -1,0 +1,223 @@
+#include<stdio.h>
+#include<graphics.h>
+#include<time.h>
+//自己下载 安装
+//加 落雁老师QQ 670327842 VS graphics.h图形库
+//stdafx.cpp
+/*
+界面
+创建一个图形库界面
+1. 需要内容 VS 图形库
+2.素材 0~8 +3 12
+3.代码 部分
+
+玩法
+1.鼠标点击 点击图片 换成 雷 数字
+2.输赢判断 输了怎么办
+赢了怎么办
+3.循环过程 退出
+
+知识点
+1.循环嵌套
+2.函数调用
+3.数组
+4.递归
+//C语言 没有类和对象
+*/
+#define N 10//大小 N*N
+#define M 50//图片 像素点
+void game();
+void draw(int map[][N + 2], IMAGE *img);//画图
+int play(int map[][N + 2], int *pwin);//鼠标点击
+void loadingplay(int x, int y, int map[][N + 2], int *pwin);//递归函数
+HWND hWnd;
+int main()
+{
+	game();
+	closegraph();
+	//getchar();
+	return 0;
+}
+void game()
+{
+	while (1)
+	{
+		initgraph(N*M, N*M);
+		HWND hWnd = GetHWnd();
+		IMAGE img[12];
+		loadimage(&img[0], "0.jpg", M, M);
+		loadimage(&img[1], "1.jpg", M, M);
+		loadimage(&img[2], "2.jpg", M, M);
+		loadimage(&img[3], "3.jpg", M, M);
+		loadimage(&img[4], "4.jpg", M, M);
+		loadimage(&img[5], "5.jpg", M, M);
+		loadimage(&img[6], "6.jpg", M, M);
+		loadimage(&img[7], "7.jpg", M, M);
+		loadimage(&img[8], "8.jpg", M, M);
+		loadimage(&img[9], "地图.jpg", M, M);
+		loadimage(&img[10], "雷.jpg", M, M);
+		loadimage(&img[11], "标记.jpg", M, M);
+		//loadimage(&img[9], L"0.jpg", M, M);
+		int map[N + 2][N + 2] = { 0 };
+		//用-1标记雷
+		srand((unsigned)time(NULL));//生成随机数种子 time.h
+		int x, y;
+		//int num = rand() % (N*N);
+		for (int n = 0; n < N;)
+		{
+			x = rand() % N + 1;//获取1~10
+			y = rand() % N + 1;
+			if (map[x][y] == 0)
+			{
+				map[x][y] = -1;//埋下一颗雷
+				n++;
+			}
+		}
+		int win = N * N - N;
+		int *pwin = &win;
+		//初步扫描过程 对于一个不为雷的元素 扫描周围的区域
+		for (int i = 1; i <= N; i++)
+		{
+			for (int j = 1; j <= N; j++)
+			{
+				//扫描整个数组
+				if (map[i][j] != -1)
+				{
+					//不用循环 判断周围8个元素 一个个判断
+					//循环判断周围9个元素的雷
+					for (x = i - 1; x <= i + 1; x++)
+					{
+						for (y = j - 1; y <= j + 1; y++)
+						{
+							if (map[x][y] == -1)
+							{
+								//扫描到一个雷
+								map[i][j]++;
+							}
+						}
+					}
+				}
+			}
+		}
+		int playgame;
+		while (1)//游戏过程
+		{
+			//画图
+			draw(map, img);
+			//鼠标点击
+
+			//输赢判断
+			if (play(map, pwin) == -1)//用指针修改win也可以
+			{
+				//踩到雷就输了
+				draw(map, img);
+				playgame = -1;
+				//MessageBox(hWnd, L"你输了", L"Lose", MB_OKCANCEL);
+				break;
+			}
+			if (win == 0)
+			{
+				//赢了
+				draw(map, img);
+				playgame = 1;
+				//MessageBox(hWnd, L"你赢了", L"Win", MB_OKCANCEL);
+				break;
+			}
+		}
+		if (playgame == 1)
+		{
+			if (MessageBox(hWnd, "按下确定重玩", "Win", MB_OKCANCEL) != IDOK)
+				//continue;
+				break;
+		}
+		else
+			if (MessageBox(hWnd, "按下确定重玩", "Lose", MB_OKCANCEL) != IDOK)
+				break;
+	}
+
+
+}
+void loadingplay(int x, int y, int map[][N + 2], int *pwin)//递归函数
+{
+	map[x][y] += 10;
+	(*pwin)--;
+	//传递为0的坐标
+	for (int i = x - 1; i <= x + 1; i++)
+	{
+		for (int j = y - 1; j <= y + 1; j++)
+		{
+			if (i <= 0 || i >= 11 || j <= 0 || j >= 11) continue;//判断是否越界
+			if (map[i][j] <= 8)//没有翻开
+			{
+				if (map[i][j] == 0) //执行递归
+				{
+					loadingplay(i, j, map, pwin);
+				}
+				else if (map[i][j] != -1)
+				{
+					map[i][j] += 10;
+					(*pwin)--;
+				}
+			}
+		}
+
+	}
+}
+int play(int map[][N + 2], int *pwin)
+{
+	MOUSEMSG msg;
+	while (1)
+	{
+		msg = GetMouseMsg();
+		switch (msg.uMsg)
+		{
+		case WM_LBUTTONDOWN:
+			if (map[msg.x / M + 1][msg.y / M + 1] == 0)
+			{
+				//翻开一片
+				//函数调用 递归
+				//什么情况下递归 递归结束
+				//递归功能
+				//翻开0周围一片 ->分割小块
+				//翻开0 ->翻开周围9个(算自己)
+				loadingplay(msg.x / M + 1, msg.y / M + 1, map, pwin);
+			}
+			else if (map[msg.x / M + 1][msg.y / M + 1] <= 8)
+			{
+				map[msg.x / M + 1][msg.y / M + 1] += 10;//翻开过程
+				(*pwin)--;
+			}
+			else continue;
+			if (map[msg.x / M + 1][msg.y / M + 1] == 9) return -1;//翻开一个雷
+			else return 0;
+			break;
+			//return  goto exit 直接退出程序
+		}
+	}
+}
+void draw(int map[][N + 2], IMAGE *img)
+{
+	for (int i = 1; i <= N; i++)
+	{
+		for (int j = 1; j <= N; j++)
+		{
+			switch (map[i][j])
+			{
+				//获取点击加10
+				//-1~8 贴空 9~18贴数字图
+			case 9:putimage((i - 1)*M, (j - 1)*M, &img[10]); break;//雷
+			case 10:putimage((i - 1)*M, (j - 1)*M, &img[0]); break;
+			case 11:putimage((i - 1)*M, (j - 1)*M, &img[1]); break;
+			case 12:putimage((i - 1)*M, (j - 1)*M, &img[2]); break;
+			case 13:putimage((i - 1)*M, (j - 1)*M, &img[3]); break;
+			case 14:putimage((i - 1)*M, (j - 1)*M, &img[4]); break;
+			case 15:putimage((i - 1)*M, (j - 1)*M, &img[5]); break;
+			case 16:putimage((i - 1)*M, (j - 1)*M, &img[6]); break;
+			case 17:putimage((i - 1)*M, (j - 1)*M, &img[7]); break;
+			case 18:putimage((i - 1)*M, (j - 1)*M, &img[8]); break;
+			default:putimage((i - 1)*M, (j - 1)*M, &img[9]); break;//空
+
+			}
+		}
+	}
+}
